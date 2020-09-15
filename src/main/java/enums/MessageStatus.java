@@ -3,7 +3,7 @@ package enums;
 public enum MessageStatus {
     SENT("SENT"),
     RECEIVED("SENT"),
-    READ("SENT");
+    READ("READ");
 
     public final String status;
 

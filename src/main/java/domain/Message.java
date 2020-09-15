@@ -3,14 +3,18 @@ package domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dto.MessageDTO;
 import enums.MessageStatus;
-import org.hibernate.annotations.Proxy;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.Map;
 import java.util.Objects;
 
+@Getter
+@Setter
 @Entity
-public class Message extends BaseEntity<Message> {
+@NoArgsConstructor
+public class Message extends BaseEntity {
     @Column(name = "content")
     private String content;
 
@@ -33,65 +37,33 @@ public class Message extends BaseEntity<Message> {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private Group group;
 
-    public String getContent() {
-        return content;
+    public Message(MessageDTO dto) {
+        this.setContent(dto.getContent());
+        this.setStatus(dto.getStatus());
+        this.setTimestamp(dto.getTimestamp());
+//        this.setSender(dto.getSenderId());
+//        this.setReceiver(dto.getReceiverId());
+//        this.setReceiver(dto.getGroupId());
     }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public MessageStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(MessageStatus status) {
-        this.status = status;
-    }
-
-    public Long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public User getSender() {
-        return sender;
-    }
-
-    public void setSender(User sender) {
-        this.sender = sender;
-    }
-
-    public User getReceiver() {
-        return receiver;
-    }
-
-    public void setReceiver(User receiver) {
-        this.receiver = receiver;
-    }
-
-    public Group getGroup() {
-        return group;
-    }
-
-    public void setGroup(Group group) {
-        this.group = group;
-    }
-
-    @Override
-    public void updateEntity(Message nMessage) {
+    public void updateEntity(MessageDTO nMessage) {
         if (!Objects.isNull(nMessage.getContent())) this.content = nMessage.getContent();
         if (!Objects.isNull(nMessage.getStatus())) this.status = nMessage.getStatus();
         if (!Objects.isNull(nMessage.getTimestamp())) this.timestamp = nMessage.getTimestamp();
-        if (!Objects.isNull(nMessage.getSender())) this.sender = nMessage.getSender();
-        if (!Objects.isNull(nMessage.getReceiver())) this.receiver = nMessage.getReceiver();
-        if (!Objects.isNull(nMessage.getGroup())) this.group = nMessage.getGroup();
+//        if (!Objects.isNull(nMessage.getSender())) this.sender = nMessage.getSender();
+//        if (!Objects.isNull(nMessage.getReceiver())) this.receiver = nMessage.getReceiver();
+//        if (!Objects.isNull(nMessage.getGroup())) this.group = nMessage.getGroup();
     }
 
-    public static Message mapFromArguments(Map<String, Object> arguments) {
-        return mapFromArguments(arguments, Message.class);
+    public MessageDTO toDTO() {
+        MessageDTO dto = new MessageDTO();
+        dto.setId(this.id);
+        dto.setContent(this.content);
+        dto.setStatus(this.status);
+        dto.setTimestamp(this.timestamp);
+//        dto.setSenderId(this.sender.getId());
+//        dto.setReceiverId(this.receiver.getId());
+//        dto.setGroupId(this.group.getId());
+        return dto;
     }
 }

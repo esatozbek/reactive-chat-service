@@ -1,12 +1,20 @@
 package domain;
 
+import dto.GroupDTO;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import javax.persistence.*;
 import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "groups")
-public class Group extends BaseEntity<Group> {
+public class Group extends BaseEntity {
     @Column(name = "title")
     private String title;
 
@@ -18,28 +26,18 @@ public class Group extends BaseEntity<Group> {
     )
     private List<User> groupUsers;
 
-    public String getTitle() {
-        return title;
+    public Group(GroupDTO dto) {
+        this.title = dto.getTitle();
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public GroupDTO toDTO() {
+        GroupDTO dto = new GroupDTO();
+        dto.setId(this.getId());
+        dto.setTitle(this.getTitle());
+        return dto;
     }
 
-    public List<User> getGroupUsers() {
-        return groupUsers;
-    }
-
-    public void setGroupUsers(List<User> groupUsers) {
-        this.groupUsers = groupUsers;
-    }
-
-    @Override
-    public void updateEntity(Group newGroup) {
-        this.title = newGroup.getTitle();
-    }
-
-    public static Group mapFromArguments(Map<String, Object> arguments) {
-        return mapFromArguments(arguments, Group.class);
+    public void updateEntity(GroupDTO dto) {
+        this.title = dto.getTitle();
     }
 }

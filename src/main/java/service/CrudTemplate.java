@@ -1,6 +1,7 @@
 package service;
 
 import domain.BaseEntity;
+import dto.BaseDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -21,12 +22,6 @@ public abstract class CrudTemplate<T extends BaseEntity, V extends JpaRepository
         if (Objects.isNull(foundEntity))
             throw new NullPointerException();
         return foundEntity;
-    }
-
-    public T update(Long id, T entity) {
-        T foundEntity = findById(id);
-        foundEntity.updateEntity(entity);
-        return repository.save(foundEntity);
     }
 
     public Long delete(Long id) {
