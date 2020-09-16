@@ -1,58 +1,51 @@
 package service;
 
+import domain.BaseEntity;
 import domain.Group;
 import dto.GroupDTO;
-import exception.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import repository.GroupRepository;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
 public class GroupService {
     private GroupRepository repository;
 
-    public Long create(GroupDTO dto) {
-        return repository.save(new Group(dto)).getId();
+    public Mono<Long> create(GroupDTO dto) {
+        return repository.save(new Group(dto)).map(BaseEntity::getId);
     }
 
-    public GroupDTO findById(Long id) {
-        if (Objects.isNull(id)) {
-            return null;
-        }
-        Group foundEntity = repository.findById(id).orElse(null);
-        if (Objects.isNull(foundEntity))
-            throw new EntityNotFoundException("Group", id);
-        return foundEntity.toDTO();
+    public Mono<GroupDTO> findById(Long id) {
+        return repository.findById(id)
+                .map(Group::toDTO);
     }
 
-    public Long update(Long id, GroupDTO dto) {
-        Group foundEntity = repository.findById(id).orElse(null);
-        foundEntity.updateEntity(dto);
-        return repository.save(foundEntity).getId();
+    public Mono<Long> update(Long id, GroupDTO dto) {
+        return repository.findById(id)
+                .doOnNext(group -> group.updateEntity(dto))
+                .map(group -> group.getId());
     }
 
-    public Long delete(Long id) {
-        Group foundEntity = repository.findById(id).orElse(null);
-        if (Objects.isNull(foundEntity))
-            throw new EntityNotFoundException("Group", id);
-        repository.delete(foundEntity);
-        return id;
+    public Mono<Long> delete(Long id) {
+        return repository.findById(id)
+                .doOnNext(group -> repository.delete(group))
+                .map(BaseEntity::getId);
     }
 
-    public List<GroupDTO> findAll() {
-        return repository.findAll().stream().map(item -> item.toDTO()).collect(Collectors.toList());
+    public Flux<GroupDTO> findAll() {
+        return repository.findAll().map(Group::toDTO);
     }
 
-    public GroupDTO findGroupByTitle(String title) {
-        return repository.findByTitle(title).toDTO();
+    public Mono<GroupDTO> findGroupByTitle(String title) {
+        return repository.findByTitle(title)
+                .map(Group::toDTO);
     }
 
-    public List<GroupDTO> findGroupByTitleContaining(String title) {
-        return repository.findByTitleContaining(title).stream().map(item -> item.toDTO()).collect(Collectors.toList());
+    public Flux<GroupDTO> findGroupByTitleContaining(String title) {
+        return repository.findByTitleContaining(title).map(item -> item.toDTO());
     }
 }

@@ -1,80 +1,112 @@
 package service;
 
+import domain.BaseEntity;
 import domain.Group;
 import domain.Message;
 import domain.User;
-import dto.GroupDTO;
 import dto.MessageDTO;
 import exception.EntityNotFoundException;
+import exception.InvalidParameterException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import repository.GroupRepository;
 import repository.MessageRepository;
+import repository.UserRepository;
+import request.MessageRequest;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class MessageService {
     private MessageRepository repository;
-    @PersistenceContext
-    private EntityManager entityManager;
+    private UserRepository userRepository;
+    private GroupRepository groupRepository;
 
-    public MessageService(MessageRepository repository) {
-        this.repository = repository;
-    }
+    public void updateMessage(Message message, MessageRequest request) {
+        message.setContent(request.getContent());
+        message.setStatus(request.getStatus());
+        message.setTimestamp(request.getTimestamp());
 
-    public Long create(MessageDTO dto) {
-        return repository.save(new Message(dto)).getId();
-    }
+        User senderUser = userRepository.findById(request.getSenderId());
+        if (Objects.isNull(senderUser))
+            throw new EntityNotFoundException("Sender user", request.getSenderId());
+        message.setSender(senderUser);
 
-    public MessageDTO findById(Long id) {
-        if (Objects.isNull(id)) {
-            return null;
+        if (!Objects.isNull(request.getReceiverId()) && !Objects.isNull(request.getGroupId()))
+            throw new InvalidParameterException("Receiver user and group can not be present at the same time.");
+        else if (Objects.isNull(request.getReceiverId()) && Objects.isNull(request.getGroupId()))
+            throw new InvalidParameterException("One of receiver user and group must be present.");
+
+        if (!Objects.isNull(request.getReceiverId())) {
+            User receiverUser = userRepository.findById(request.getSenderId());
+            if (Objects.isNull(receiverUser))
+                throw new EntityNotFoundException("Sender user", request.getSenderId());
+            message.setReceiver(receiverUser);
         }
-        Message foundEntity = repository.findById(id).orElse(null);
-        if (Objects.isNull(foundEntity))
-            throw new EntityNotFoundException("Message", id);
-        return foundEntity.toDTO();
-    }
 
-    public Long update(Long id, MessageDTO dto) {
-        Message foundEntity = repository.findById(id).orElse(null);
-        foundEntity.updateEntity(dto);
-        return repository.save(foundEntity).getId();
-    }
-
-    public Long delete(Long id) {
-        Message foundEntity = repository.findById(id).orElse(null);
-        if (Objects.isNull(foundEntity))
-            throw new EntityNotFoundException("Group", id);
-        repository.delete(foundEntity);
-        return id;
-    }
-
-    public List<MessageDTO> findAll() {
-        return repository.findAll().stream().map(item -> item.toDTO()).collect(Collectors.toList());
-    }
-
-    public List<MessageDTO> findMessages(MessageDTO dto) {
-        return repository.findMessagesByParams(dto.getContent(), dto.getStatus(), dto.getTimestamp(), dto.getSenderId(), dto.getReceiverId(), dto.getGroupId()).stream().map(item -> item.toDTO()).collect(Collectors.toList());
-    }
-
-    public Message fetchMessageEntity(MessageDTO dto) {
-        Message message = new Message();
-        message.setContent(dto.getContent());
-        message.setStatus(dto.getStatus());
-        message.setTimestamp(dto.getTimestamp());
-        if (!Objects.isNull(dto.getSenderId())) {
-            message.setSender(entityManager.getReference(User.class, dto.getSenderId()));
+        if (!Objects.isNull(request.getGroupId())) {
+            Group group = groupRepository.findById(request.getGroupId());
+            if (Objects.isNull(group))
+                throw new EntityNotFoundException("Group", request.getGroupId());
+            message.setGroup(group);
         }
-        if (!Objects.isNull(dto.getReceiverId())) {
-            message.setReceiver(entityManager.getReference(User.class, dto.getReceiverId()));
-        }
-        if (!Objects.isNull(dto.getGroupId())) {
-            message.setGroup(entityManager.getReference(Group.class, dto.getGroupId()));
-        }
-        return message;
+    }
+
+    public Mono<Long> create(MessageRequest request) {
+        Message newMessage = new Message();
+        updateMessage(newMessage, request);
+
+        return repository.save(newMessage).map(message -> message.getId());
+    }
+
+    public Mono<Long> update(Long id, MessageRequest request) {
+        return repository.findById(id)
+                .doOnNext(message -> updateMessage(message, request))
+                .map(BaseEntity::getId);
+    }
+
+    public Mono<Long> delete(Long id) {
+        return repository.findById(id)
+                .doOnNext(message -> repository.delete(message))
+                .map(BaseEntity::getId);
+    }
+
+    public Mono<MessageDTO> findById(Long id) {
+        return repository.findById(id)
+                .map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findAll() {
+        return repository.findAll().map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesByContent(String content) {
+        return repository.findMessagesByContentContaining(content)
+                .map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesBetweenTimestamps(Long start, Long end) {
+        return repository.findMessagesByTimestampIsBetween(start, end)
+                .map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesBySender(Long senderId) {
+        return repository.findMessagesBySenderId(senderId)
+                .map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesByReceiver(Long receiverId) {
+        return repository.findMessagesByReceiverId(receiverId)
+                .map(Message::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesByGroupId(Long groupId) {
+        return repository.findMessagesByGroupId(groupId)
+                .map(Message::toDTO);
     }
 }

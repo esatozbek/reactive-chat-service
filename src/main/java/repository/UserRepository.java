@@ -1,11 +1,11 @@
 package repository;
 
 import domain.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-
-public interface UserRepository extends JpaRepository<User, Long> {
-    User findByUsername(String username);
-    List<User> findByUsernameContaining(String username);
+public interface UserRepository extends ReactiveCrudRepository<User, Long> {
+    Mono<User> findByUsername(String username);
+    Flux<User> findByUsernameContaining(String username);
 }

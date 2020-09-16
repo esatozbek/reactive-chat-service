@@ -1,61 +1,58 @@
 package service;
 
+import domain.BaseEntity;
 import domain.User;
 import dto.UserDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import repository.UserRepository;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class UserService {
     private UserRepository repository;
 
-    public UserService(UserRepository userRepository) {
-        this.repository = userRepository;
+    public Mono<Long> createUser(UserDTO userDTO) {
+        return repository.save(new User(userDTO)).map(BaseEntity::getId);
     }
 
-    public Long createUser(UserDTO userDTO) {
-        return repository.save(new User(userDTO)).getId();
-    }
-
-    public UserDTO findById(Long id) {
+    public Mono<UserDTO> findById(Long id) {
         if (Objects.isNull(id)) {
             throw new InvalidParameterException("user id");
         }
-        User foundEntity = repository.findById(id).orElse(null);
-        if (Objects.isNull(foundEntity))
-            throw new EntityNotFoundException("User", id);
-        return foundEntity.toDTO();
+        return repository.findById(id)
+                .map(User::toDTO)
+                .onErrorMap(e -> new EntityNotFoundException("asd", id));
     }
 
-    public Long update(Long id, UserDTO entity) {
-        User foundEntity = repository.findById(id).orElse(null);
-        foundEntity.updateEntity(entity);
-        return repository.save(foundEntity).getId();
+    public Mono<Long> update(Long id, UserDTO dto) {
+        return repository.findById(id)
+                .doOnNext(user -> user.updateEntity(dto))
+                .map(BaseEntity::getId);
     }
 
-    public Long delete(Long id) {
-        User entity = repository.findById(id).orElse(null);
-        if (Objects.isNull(entity))
-            throw new NullPointerException();
-        repository.delete(entity);
-        return id;
+    public Mono<Long> delete(Long id) {
+        return repository.findById(id)
+                .doOnNext(user -> repository.delete(user))
+                .map(BaseEntity::getId);
     }
 
-    public List<UserDTO> findAll() {
-        return repository.findAll().stream().map(item -> item.toDTO()).collect(Collectors.toList());
+    public Flux<UserDTO> findAll() {
+        return repository.findAll().map(item -> item.toDTO());
     }
 
-    public UserDTO findUserByUsername(String username) {
-        return repository.findByUsername(username).toDTO();
+    public Mono<UserDTO> findUserByUsername(String username) {
+        return repository.findByUsername(username)
+                .map(User::toDTO);
     }
 
-    public List<UserDTO> findUserByUsernameContaining(String username) {
-        return repository.findByUsernameContaining(username).stream().map(item -> item.toDTO()).collect(Collectors.toList());
+    public Flux<UserDTO> findUserByUsernameContaining(String username) {
+        return repository.findByUsernameContaining(username).map(User::toDTO);
     }
 }

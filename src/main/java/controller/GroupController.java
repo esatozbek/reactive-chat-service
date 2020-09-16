@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono;
 import response.IdResponse;
 import service.GroupService;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping("/group")
@@ -20,7 +22,9 @@ public class GroupController {
     }
 
     @GetMapping()
-    public Flux<GroupDTO> getAllGroups() {
+    public Flux<GroupDTO> getAllGroups(String title) {
+        if (!Objects.isNull(title))
+            return Flux.fromIterable(groupService.findGroupByTitleContaining(title));
         return Flux.fromIterable(groupService.findAll());
     }
 

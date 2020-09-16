@@ -1,11 +1,11 @@
 package repository;
 
 import domain.Group;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-
-public interface GroupRepository extends JpaRepository<Group, Long> {
-    Group findByTitle(String title);
-    List<Group> findByTitleContaining(String title);
+public interface GroupRepository extends ReactiveCrudRepository<Group, Long> {
+    Mono<Group> findByTitle(String title);
+    Flux<Group> findByTitleContaining(String title);
 }

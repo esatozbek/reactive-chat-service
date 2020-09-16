@@ -2,8 +2,8 @@ package integrationTest;
 
 import config.Application;
 import dto.MessageDTO;
-import dto.UserDTO;
 import enums.MessageStatus;
+import integrationTest.helpers.TestData;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -11,68 +11,36 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import request.MessageRequest;
 import response.IdResponse;
 
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { Application.class, TestData.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MessageIT {
     @Autowired
     WebTestClient webTestClient;
+    @Autowired
+    TestData testData;
+
+    private static final String MESSAGE_URI = "/message";
 
     private static Long messageId;
-    private static Long senderId;
-    private static Long receiverId;
-
-
-    public void before() {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("sender");
-        IdResponse response = webTestClient
-                .post()
-                .uri("/user")
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(userDTO)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(IdResponse.class)
-                .returnResult()
-                .getResponseBody();
-
-        senderId = response.getId();
-
-        userDTO.setUsername("receiver");
-        IdResponse response2 = webTestClient
-                .post()
-                .uri("/user")
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(userDTO)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(IdResponse.class)
-                .returnResult()
-                .getResponseBody();
-
-        receiverId = response2.getId();
-    }
 
     @Test
     @Order(1)
     public void createMessageTest() {
-        before();
-        MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setContent("content");
-        messageDTO.setTimestamp(System.currentTimeMillis());
-        messageDTO.setStatus(MessageStatus.SENT);
-        messageDTO.setSenderId(senderId);
-        messageDTO.setReceiverId(receiverId);
+        MessageRequest request = TestData.prepareMessageRequest(
+                testData.getUserIdList().get(0),
+                testData.getUserIdList().get(0)
+        );
 
         IdResponse response = webTestClient
                 .post()
-                .uri("/message")
+                .uri(MESSAGE_URI)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(messageDTO)
+                .bodyValue(request)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(IdResponse.class)
@@ -88,7 +56,7 @@ public class MessageIT {
     public void getMessageTest() {
         webTestClient
                 .get()
-                .uri("/message/" + messageId)
+                .uri(MESSAGE_URI + "/" + messageId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -101,18 +69,18 @@ public class MessageIT {
     @Test
     @Order(3)
     public void updateMessageTest() {
-        MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setContent("content");
-        messageDTO.setTimestamp(System.currentTimeMillis());
-        messageDTO.setStatus(MessageStatus.SENT);
-        messageDTO.setSenderId(senderId);
-        messageDTO.setReceiverId(receiverId);
+        MessageRequest request = TestData.prepareMessageRequest(
+                testData.getUserIdList().get(0),
+                testData.getUserIdList().get(0)
+        );
+        request.setContent("content2");
+        request.setStatus(MessageStatus.RECEIVED);
 
         webTestClient
                 .put()
-                .uri("/message/" + messageId)
+                .uri(MESSAGE_URI + "/" + messageId)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(messageDTO)
+                .bodyValue(request)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(IdResponse.class)
@@ -126,7 +94,7 @@ public class MessageIT {
     public void deleteMessageTest() {
         webTestClient
                 .delete()
-                .uri("/message/" + messageId)
+                .uri(MESSAGE_URI + "/" + messageId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -134,5 +102,85 @@ public class MessageIT {
                 .consumeWith(response -> {
                     Assertions.assertTrue(response.getResponseBody().getStatus());
                 });
+    }
+
+    @Test
+    @Order(5)
+    public void getMessagesTest() {
+        testData.prepareMessageTestData(webTestClient);
+
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class)
+                .hasSize(testData.getMessageIdList().size());
+    }
+
+    @Test
+    @Order(6)
+    public void getMessagesBySenderTest() {
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI + "/sender/" + testData.getUserIdList().get(0))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class)
+                .hasSize(testData.getMessageIdList().size());
+    }
+
+    @Test
+    @Order(7)
+    public void getMessagesByReceiverTest() {
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI + "/receiver/" + testData.getUserIdList().get(0))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class)
+                .hasSize(testData.getMessageIdList().size());
+    }
+
+    @Test
+    @Order(8)
+    public void getMessagesByGroupTest() {
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI + "/group/" + testData.getGroupIdList().get(0))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class);
+    }
+
+    @Test
+    @Order(9)
+    public void getMessagesByContentTest() {
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI + "/content/content")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class);
+    }
+
+    @Test
+    @Order(10)
+    public void getMessagesByTimestampsTest() {
+        Long start = System.currentTimeMillis() - 60 * 60 * 1000;
+        Long end = System.currentTimeMillis();
+
+        webTestClient
+                .get()
+                .uri(MESSAGE_URI + "/start/" + start + "/end/" + end)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(MessageDTO.class);
     }
 }

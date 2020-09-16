@@ -2,6 +2,7 @@ package integrationTest;
 
 import config.Application;
 import dto.UserDTO;
+import integrationTest.helpers.TestData;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,24 +15,28 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import response.IdResponse;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { Application.class, TestData.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserIT {
     @Autowired
     WebTestClient webTestClient;
+    @Autowired
+    TestData testData;
+
+    public final static String USER_URI = "/user";
 
     private static Long userId;
 
     @Test
     @Order(1)
     public void createUser() {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("user1");
+        UserDTO userDTO = TestData.prepareUserDTO();
+
         IdResponse response = webTestClient
                 .post()
-                .uri("/user")
+                .uri(USER_URI)
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(userDTO)
                 .exchange()
@@ -49,24 +54,26 @@ public class UserIT {
     public void getUserTest() {
         webTestClient
                 .get()
-                .uri("/user/" + userId)
+                .uri(USER_URI + "/" + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(UserDTO.class)
                 .consumeWith(response -> {
                     Assertions.assertEquals(userId, response.getResponseBody().getId());
+                    Assertions.assertEquals("user1", response.getResponseBody().getUsername());
                 });
     }
 
     @Test
     @Order(3)
     public void updateUserTest() {
-        UserDTO userDTO = new UserDTO();
+        UserDTO userDTO = TestData.prepareUserDTO();
         userDTO.setUsername("user11");
+
         webTestClient
                 .put()
-                .uri("/user/" + userId)
+                .uri(USER_URI + "/" + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(userDTO)
                 .exchange()
@@ -82,13 +89,67 @@ public class UserIT {
     public void deleteUserTest() {
         webTestClient
                 .delete()
-                .uri("/user/" + userId)
+                .uri(USER_URI + "/" + userId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(IdResponse.class)
-                .consumeWith(response -> {
-                    Assertions.assertTrue(response.getResponseBody().getStatus());
-                });
+                .consumeWith(response -> Assertions.assertTrue(response.getResponseBody().getStatus()));
+    }
+
+    @Test
+    @Order(5)
+    public void findUsersTest() {
+        testData.prepareUserTestData(webTestClient);
+
+        webTestClient
+                .get()
+                .uri(USER_URI)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UserDTO.class)
+                .hasSize(testData.getUserIdList().size());
+    }
+
+    @Test
+    @Order(6)
+    public void findUsersByUsernameTest() {
+        webTestClient
+                .get()
+                .uri(USER_URI + "?username=user")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UserDTO.class)
+                .hasSize(testData.getUserIdList().size());
+    }
+
+    @Test
+    @Order(7)
+    public void findUsersByUsernameEmptyTest() {
+        webTestClient
+                .get()
+                .uri(USER_URI + "?username=test")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UserDTO.class)
+                .hasSize(0);
+    }
+
+    @Test
+    @Order(8)
+    public void createUserNullTest() {
+        UserDTO userDTO = TestData.prepareUserDTO();
+        userDTO.setUsername(null);
+
+        webTestClient
+                .post()
+                .uri(USER_URI)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(userDTO)
+                .exchange()
+                .expectStatus().is5xxServerError();
     }
 }

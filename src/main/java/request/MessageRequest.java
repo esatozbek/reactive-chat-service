@@ -1,4 +1,4 @@
-package dto;
+package request;
 
 import enums.MessageStatus;
 import lombok.Getter;
@@ -8,12 +8,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MessageDTO implements BaseDTO {
+public class MessageRequest {
     private Long id;
     private String content;
     private MessageStatus status;
     private Long timestamp;
-    private UserDTO sender;
-    private UserDTO receiver;
-    private GroupDTO group;
+    private Long senderId;
+    private Long receiverId;
+    private Long groupId;
 }

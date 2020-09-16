@@ -6,10 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import response.IdResponse;
-import response.ParametricResponse;
 import service.UserService;
 
-import java.util.List;
 import java.util.Objects;
 
 @AllArgsConstructor
