@@ -1,12 +1,10 @@
 package domain;
 
-import javax.persistence.*;
 
-@MappedSuperclass
+import org.springframework.data.annotation.Id;
+
 public abstract class BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     public Long id;
 
     public Long getId() {

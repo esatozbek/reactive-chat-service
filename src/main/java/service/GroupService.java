@@ -9,11 +9,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import repository.GroupRepository;
 
-
-@AllArgsConstructor
 @Service
 public class GroupService {
     private GroupRepository repository;
+
+    public GroupService(GroupRepository repository) {
+        this.repository = repository;
+    }
 
     public Mono<Long> create(GroupDTO dto) {
         return repository.save(new Group(dto)).map(BaseEntity::getId);

@@ -28,7 +28,7 @@ public class UserService {
         }
         return repository.findById(id)
                 .map(User::toDTO)
-                .onErrorMap(e -> new EntityNotFoundException("asd", id));
+                .onErrorMap(e -> new EntityNotFoundException("User", id));
     }
 
     public Mono<Long> update(Long id, UserDTO dto) {

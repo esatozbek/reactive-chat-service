@@ -4,29 +4,16 @@ import dto.UserDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import javax.persistence.*;
-import java.util.List;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity
-@Table(name = "users")
+@Table("users")
 public class User extends BaseEntity {
-    @Column(name = "username")
+    @Column("username")
     private String username;
-
-    @ManyToMany(mappedBy = "groupUsers")
-    private List<Group> groups;
-
-    @ManyToMany
-    @JoinTable(
-            name = "user_contact",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "contact_id")
-    )
-    private List<User> contacts;
 
     public User(UserDTO dto) {
         this.username = dto.getUsername();

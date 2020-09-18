@@ -2,12 +2,15 @@ package controller;
 
 import dto.UserDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import response.IdResponse;
 import service.UserService;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 @AllArgsConstructor
@@ -16,30 +19,37 @@ import java.util.Objects;
 public class UserController {
     private UserService userService;
 
+    @Autowired
+    private ApplicationContext context;
+
     @GetMapping("/{id}")
     public Mono<UserDTO> getUser(@PathVariable Long id) {
-        return Mono.just(userService.findById(id));
+        return userService.findById(id);
     }
 
     @GetMapping()
     public Flux<UserDTO> findUsers(String username) {
+        System.out.println(Arrays.toString(context.getEnvironment().getActiveProfiles()));
         if (Objects.isNull(username))
-            return Flux.fromIterable(userService.findAll());
-        return Flux.fromIterable(userService.findUserByUsernameContaining(username));
+            return userService.findAll();
+        return userService.findUserByUsernameContaining(username);
     }
 
     @PutMapping("/{id}")
     public Mono<IdResponse> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
-        return Mono.just(new IdResponse(userService.update(id, userDTO)));
+        return userService.update(id, userDTO)
+                .map(IdResponse::new);
     }
 
     @PostMapping()
     public Mono<IdResponse> createUser(@RequestBody UserDTO userDTO) {
-        return Mono.just(new IdResponse(userService.createUser(userDTO)));
+        return userService.createUser(userDTO)
+                .map(IdResponse::new);
     }
 
     @DeleteMapping("/{id}")
     public Mono<IdResponse> deleteUser(@PathVariable Long id) {
-        return Mono.just(new IdResponse(userService.delete(id)));
+        return userService.delete(id)
+                .map(IdResponse::new);
     }
 }

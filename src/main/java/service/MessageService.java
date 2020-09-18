@@ -1,9 +1,7 @@
 package service;
 
 import domain.BaseEntity;
-import domain.Group;
 import domain.Message;
-import domain.User;
 import dto.MessageDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
@@ -11,50 +9,74 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import repository.GroupRepository;
 import repository.MessageRepository;
-import repository.UserRepository;
 import request.MessageRequest;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class MessageService {
     private MessageRepository repository;
-    private UserRepository userRepository;
-    private GroupRepository groupRepository;
+    private UserService userService;
+    private GroupService groupService;
 
     public void updateMessage(Message message, MessageRequest request) {
-        message.setContent(request.getContent());
-        message.setStatus(request.getStatus());
-        message.setTimestamp(request.getTimestamp());
-
-        User senderUser = userRepository.findById(request.getSenderId());
-        if (Objects.isNull(senderUser))
-            throw new EntityNotFoundException("Sender user", request.getSenderId());
-        message.setSender(senderUser);
-
         if (!Objects.isNull(request.getReceiverId()) && !Objects.isNull(request.getGroupId()))
             throw new InvalidParameterException("Receiver user and group can not be present at the same time.");
         else if (Objects.isNull(request.getReceiverId()) && Objects.isNull(request.getGroupId()))
             throw new InvalidParameterException("One of receiver user and group must be present.");
 
+        message.setContent(request.getContent());
+        message.setStatus(request.getStatus());
+        message.setTimestamp(request.getTimestamp());
+
+        userService.findById(request.getSenderId())
+                .doOnNext(user -> message.setSenderId(user.getId()))
+                .doOnError(e -> Mono.error(new EntityNotFoundException("Sender user", request.getSenderId())))
+                .subscribe();
+
         if (!Objects.isNull(request.getReceiverId())) {
-            User receiverUser = userRepository.findById(request.getSenderId());
-            if (Objects.isNull(receiverUser))
-                throw new EntityNotFoundException("Sender user", request.getSenderId());
-            message.setReceiver(receiverUser);
+            userService.findById(request.getReceiverId())
+                    .doOnNext(user -> message.setReceiverId(user.getId()))
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", request.getSenderId())))
+                    .subscribe();
         }
 
         if (!Objects.isNull(request.getGroupId())) {
-            Group group = groupRepository.findById(request.getGroupId());
-            if (Objects.isNull(group))
-                throw new EntityNotFoundException("Group", request.getGroupId());
-            message.setGroup(group);
+            groupService.findById(request.getGroupId())
+                    .doOnNext(group -> message.setGroupId(group.getId()))
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Group", request.getSenderId())))
+                    .subscribe();
         }
+    }
+
+    public MessageDTO toDTO(Message message) {
+        MessageDTO dto = new MessageDTO();
+        dto.setId(message.getId());
+        dto.setContent(message.getContent());
+        dto.setStatus(message.getStatus());
+        dto.setTimestamp(message.getTimestamp());
+
+        userService.findById(message.getSenderId())
+                .doOnNext(dto::setSender)
+                .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", message.getReceiverId())))
+                .subscribe();
+
+        if (!Objects.isNull(message.getReceiverId())) {
+            userService.findById(message.getReceiverId())
+                    .doOnNext(dto::setReceiver)
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", message.getReceiverId())))
+                    .subscribe();
+        }
+        if (!Objects.isNull(message.getGroupId())) {
+            groupService.findById(message.getGroupId())
+                    .doOnNext(dto::setGroup)
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Group", message.getSenderId())))
+                    .subscribe();
+        }
+
+        return dto;
     }
 
     public Mono<Long> create(MessageRequest request) {
@@ -78,35 +100,35 @@ public class MessageService {
 
     public Mono<MessageDTO> findById(Long id) {
         return repository.findById(id)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 
     public Flux<MessageDTO> findAll() {
-        return repository.findAll().map(Message::toDTO);
+        return repository.findAll().map(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByContent(String content) {
         return repository.findMessagesByContentContaining(content)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesBetweenTimestamps(Long start, Long end) {
         return repository.findMessagesByTimestampIsBetween(start, end)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesBySender(Long senderId) {
         return repository.findMessagesBySenderId(senderId)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByReceiver(Long receiverId) {
         return repository.findMessagesByReceiverId(receiverId)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByGroupId(Long groupId) {
         return repository.findMessagesByGroupId(groupId)
-                .map(Message::toDTO);
+                .map(this::toDTO);
     }
 }

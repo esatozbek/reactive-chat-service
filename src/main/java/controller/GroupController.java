@@ -18,28 +18,31 @@ public class GroupController {
 
     @GetMapping("/{id}")
     public Mono<GroupDTO> getGroup(@PathVariable Long id) {
-        return Mono.just(groupService.findById(id));
+        return groupService.findById(id);
     }
 
     @GetMapping()
     public Flux<GroupDTO> getAllGroups(String title) {
         if (!Objects.isNull(title))
-            return Flux.fromIterable(groupService.findGroupByTitleContaining(title));
-        return Flux.fromIterable(groupService.findAll());
+            return groupService.findGroupByTitleContaining(title);
+        return groupService.findAll();
     }
 
     @PutMapping("/{id}")
     public Mono<IdResponse> updateGroup(@PathVariable Long id, @RequestBody GroupDTO groupDTO) {
-        return Mono.just(new IdResponse(groupService.update(id, groupDTO)));
+        return groupService.update(id, groupDTO)
+                .map(IdResponse::new);
     }
 
     @PostMapping()
     public Mono<IdResponse> createGroup(@RequestBody GroupDTO groupDTO) {
-        return Mono.just(new IdResponse(groupService.create(groupDTO)));
+        return groupService.create(groupDTO)
+                .map(IdResponse::new);
     }
 
     @DeleteMapping("/{id}")
     public Mono<IdResponse> deleteGroup(@PathVariable Long id) {
-        return Mono.just(new IdResponse(groupService.delete(id)));
+        return groupService.delete(id)
+                .map(IdResponse::new);
     }
 }
