@@ -12,7 +12,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @NoArgsConstructor
 @Table("groups")
 public class Group extends BaseEntity {
-    @Column("title")
+    @Column("TITLE")
     private String title;
 
     public Group(GroupDTO dto) {

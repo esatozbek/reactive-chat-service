@@ -1,10 +1,13 @@
 package controller;
 
 import dto.GroupDTO;
+import dto.UserDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import request.AddUserGroupRequest;
+import response.BaseResponse;
 import response.IdResponse;
 import service.GroupService;
 
@@ -23,9 +26,9 @@ public class GroupController {
 
     @GetMapping()
     public Flux<GroupDTO> getAllGroups(String title) {
-        if (!Objects.isNull(title))
-            return groupService.findGroupByTitleContaining(title);
-        return groupService.findAll();
+        if (Objects.isNull(title))
+            return groupService.findAll();
+        return groupService.findGroupByTitleContaining(title);
     }
 
     @PutMapping("/{id}")
@@ -43,6 +46,18 @@ public class GroupController {
     @DeleteMapping("/{id}")
     public Mono<IdResponse> deleteGroup(@PathVariable Long id) {
         return groupService.delete(id)
-                .map(IdResponse::new);
+                .then(Mono.just(new IdResponse(id)));
+    }
+
+    @GetMapping("/users/{id}")
+    public Flux<UserDTO> getGroupUsers(@PathVariable Long id) {
+        return groupService.getGroupUsers(id);
+    }
+
+    @PostMapping("/users")
+    public Mono<BaseResponse> addUserToGroup(@RequestBody AddUserGroupRequest request) {
+        return groupService
+                .addUserGroup(request.getUserId(), request.getGroupId())
+                .map(item -> new BaseResponse());
     }
 }

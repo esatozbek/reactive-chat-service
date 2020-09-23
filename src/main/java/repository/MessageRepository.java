@@ -9,18 +9,18 @@ import reactor.core.publisher.Flux;
 
 @Repository
 public interface MessageRepository extends ReactiveCrudRepository<Message, Long> {
-    @Query("select m from Message m where m.sender.id = :senderId")
-    Flux<Message> findMessagesByContentContaining(String content);
+    @Query("select * from message  where content like :content")
+    Flux<Message> findMessagesByContentContaining(@Param("content") String content);
 
-    @Query("select m from Message m where m.sender.id = :senderId")
-    Flux<Message> findMessagesByTimestampIsBetween(Long start, Long end);
+    @Query("select * from message  where timestamp between :start and :end")
+    Flux<Message> findMessagesByTimestampIsBetween(@Param("start") Long start, @Param("end") Long end);
 
-    @Query("select m from Message m where m.sender.id = :senderId")
+    @Query("select * from message  where sender_id = :content")
     Flux<Message> findMessagesBySenderId(@Param("senderId") Long senderId);
 
-    @Query("select m from Message m where m.receiver.id = :receiverId")
+    @Query("select * from message  where receiver_id = :receiverId")
     Flux<Message> findMessagesByReceiverId(@Param("receiverId") Long receiverId);
 
-    @Query("select m from Message m where m.group.id = :groupId")
+    @Query("select * from message  where group_id = :groupId")
     Flux<Message> findMessagesByGroupId(@Param("groupId") Long groupId);
 }

@@ -1,5 +1,6 @@
 package config;
 
+import lombok.extern.java.Log;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -10,7 +11,8 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 @ComponentScan({"service", "controller","repository"})
 @EnableR2dbcRepositories({"repository"})
 @EntityScan({"domain"})
-public class Application {
+@Log
+public class Application  {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }

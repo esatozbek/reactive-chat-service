@@ -1,6 +1,7 @@
 package integrationTest;
 
 import config.Application;
+import config.TestConnectionFactoryInitializer;
 import dto.MessageDTO;
 import enums.MessageStatus;
 import integrationTest.helpers.TestData;
@@ -14,7 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import request.MessageRequest;
 import response.IdResponse;
 
-@SpringBootTest(classes = { Application.class, TestData.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { Application.class, TestData.class, TestConnectionFactoryInitializer.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -31,6 +32,9 @@ public class MessageIT {
     @Test
     @Order(1)
     public void createMessageTest() {
+        testData.prepareUserTestData(webTestClient);
+        testData.prepareGroupTestData(webTestClient);
+
         MessageRequest request = TestData.prepareMessageRequest(
                 testData.getUserIdList().get(0),
                 testData.getUserIdList().get(0)

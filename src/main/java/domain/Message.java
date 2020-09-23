@@ -12,21 +12,21 @@ import org.springframework.data.relational.core.mapping.Table;
 @NoArgsConstructor
 @Table("message")
 public class Message extends BaseEntity {
-    @Column("content")
+    @Column("CONTENT")
     private String content;
 
-    @Column("status")
+    @Column("STATUS")
     private MessageStatus status;
 
-    @Column("timestamp")
+    @Column("TIMESTAMP")
     private Long timestamp;
 
-    @Column("sender_id")
+    @Column("SENDER_ID")
     private Long senderId;
 
-    @Column("receiver_id")
+    @Column("RECEIVER_ID")
     private Long receiverId;
 
-    @Column("group_id")
+    @Column("GROUP_ID")
     private Long groupId;
 }

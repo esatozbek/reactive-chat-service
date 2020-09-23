@@ -2,6 +2,7 @@ package service;
 
 import domain.BaseEntity;
 import domain.User;
+import domain.UserContact;
 import dto.UserDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
@@ -9,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import repository.UserContactRepository;
 import repository.UserRepository;
 
 import java.util.Objects;
@@ -17,6 +19,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class UserService {
     private UserRepository repository;
+    private UserContactRepository userContactRepository;
 
     public Mono<Long> createUser(UserDTO userDTO) {
         return repository.save(new User(userDTO)).map(BaseEntity::getId);
@@ -37,10 +40,8 @@ public class UserService {
                 .map(BaseEntity::getId);
     }
 
-    public Mono<Long> delete(Long id) {
-        return repository.findById(id)
-                .doOnNext(user -> repository.delete(user))
-                .map(BaseEntity::getId);
+    public Mono<Void> delete(Long id) {
+        return repository.deleteById(id);
     }
 
     public Flux<UserDTO> findAll() {
@@ -53,6 +54,19 @@ public class UserService {
     }
 
     public Flux<UserDTO> findUserByUsernameContaining(String username) {
-        return repository.findByUsernameContaining(username).map(User::toDTO);
+        String percentageConcated = "%" + username + "%";
+        return repository.findByUsernameContaining(percentageConcated).map(User::toDTO);
+    }
+
+    public Mono<UserContact> addContact(Long userId, Long contactId) {
+        UserContact userContact = new UserContact(userId, contactId);
+        return userContactRepository.save(userContact);
+    }
+
+    public Flux<UserDTO> getContactsFromUser(Long userId) {
+        return userContactRepository
+                .findContactsFromUser(userId)
+                .flatMap(userContact -> repository.findById(userContact.getContactId()))
+                .map(User::toDTO);
     }
 }

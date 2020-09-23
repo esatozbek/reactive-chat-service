@@ -92,10 +92,8 @@ public class MessageService {
                 .map(BaseEntity::getId);
     }
 
-    public Mono<Long> delete(Long id) {
-        return repository.findById(id)
-                .doOnNext(message -> repository.delete(message))
-                .map(BaseEntity::getId);
+    public Mono<Void> delete(Long id) {
+        return repository.deleteById(id);
     }
 
     public Mono<MessageDTO> findById(Long id) {

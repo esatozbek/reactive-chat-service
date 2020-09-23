@@ -1,6 +1,7 @@
 package integrationTest;
 
 import config.Application;
+import config.TestConnectionFactoryInitializer;
 import dto.UserDTO;
 import integrationTest.helpers.TestData;
 import org.junit.jupiter.api.*;
@@ -12,10 +13,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import request.AddContactRequest;
 import response.IdResponse;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = { Application.class, TestData.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { Application.class, TestData.class, TestConnectionFactoryInitializer.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -151,5 +153,37 @@ public class UserIT {
                 .bodyValue(userDTO)
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @Order(9)
+    public void addContactTest() {
+        Long userId = testData.getUserIdList().get(0);
+        Long contactId = testData.getUserIdList().get(1);
+
+        AddContactRequest request = new AddContactRequest(userId, contactId);
+
+        webTestClient
+                .post()
+                .uri(USER_URI + "/contact")
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(10)
+    public void getContactsTest() {
+        Long userId = testData.getUserIdList().get(0);
+
+        webTestClient
+                .get()
+                .uri(USER_URI + "/contact/" + userId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UserDTO.class)
+                .hasSize(1);
     }
 }

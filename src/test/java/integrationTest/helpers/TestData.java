@@ -65,6 +65,8 @@ public class TestData {
     }
 
     public void prepareUserTestData(WebTestClient webTestClient) {
+        if (this.userIdList.size() == 10) return;
+
         for (int i = 0;i < 10;i++) {
             UserDTO userDTO = prepareUserDTO();
             userDTO.setUsername("user" + i);
@@ -84,6 +86,8 @@ public class TestData {
     }
 
     public void prepareGroupTestData(WebTestClient webTestClient) {
+        if (this.groupIdList.size() == 10) return;
+
         for (int i = 0;i < 10;i++) {
             GroupDTO groupDTO = prepareGroupDTO();
             groupDTO.setTitle("title" + i);
@@ -103,6 +107,8 @@ public class TestData {
     }
 
     public void prepareMessageTestData(WebTestClient webTestClient) {
+        if (this.messageIdList.size() == 10) return;
+
         Random random = new Random();
 
         for (int i = 0;i < 0;i++) {

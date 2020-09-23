@@ -18,6 +18,7 @@ public class DatabaseConfig extends AbstractR2dbcConfiguration {
 
     @Override
     public ConnectionFactory connectionFactory() {
+        System.out.println(activeProfile);
         if (activeProfile.equals("test"))
             return ConnectionFactories.get(ConnectionFactoryOptions.builder()
                     .option(DRIVER, "h2")
@@ -26,6 +27,7 @@ public class DatabaseConfig extends AbstractR2dbcConfiguration {
                     .option(USER, "sa")
                     .option(PASSWORD, "password")
                     .build());
+        System.out.println("postgre");
         return ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "postgresql")
                 .option(HOST, "localhost")

@@ -1,7 +1,9 @@
 package integrationTest;
 
 import config.Application;
+import config.TestConnectionFactoryInitializer;
 import dto.GroupDTO;
+import dto.UserDTO;
 import integrationTest.helpers.TestData;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,12 +14,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import request.AddUserGroupRequest;
 import response.IdResponse;
 
-import java.util.List;
-
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = { Application.class, TestData.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { Application.class, TestData.class, TestConnectionFactoryInitializer.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -154,5 +155,37 @@ public class GroupIT {
                 .bodyValue(groupDTO)
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @Order(9)
+    public void addUserGroupTest() {
+        Long groupId = testData.getGroupIdList().get(0);
+        Long userId = testData.getUserIdList().get(0);
+
+        AddUserGroupRequest request = new AddUserGroupRequest(userId, groupId);
+
+        webTestClient
+                .post()
+                .uri(GROUP_URI + "/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(10)
+    public void getUserGroupTest() {
+        Long groupId = testData.getGroupIdList().get(0);
+
+        webTestClient
+                .get()
+                .uri(GROUP_URI + "/users/" + groupId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(UserDTO.class)
+                .hasSize(1);
     }
 }

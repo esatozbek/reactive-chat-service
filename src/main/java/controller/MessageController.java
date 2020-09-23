@@ -40,7 +40,7 @@ public class MessageController {
     @DeleteMapping("/{id}")
     public Mono<IdResponse> deleteMessage(@PathVariable Long id) {
         return messageService.delete(id)
-                .map(IdResponse::new);
+                .then(Mono.just(new IdResponse(id)));
     }
 
     @GetMapping("/sender/{id}")
