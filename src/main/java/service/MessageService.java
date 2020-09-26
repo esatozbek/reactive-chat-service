@@ -2,22 +2,29 @@ package service;
 
 import domain.BaseEntity;
 import domain.Message;
+import dto.GroupDTO;
 import dto.MessageDTO;
+import dto.UserDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import repository.MessageRepository;
+import repository.reactive.MessageRepository;
+import repository.stream.MessageStreamRepository;
 import request.MessageRequest;
 
 import java.util.Objects;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class MessageService {
     private MessageRepository repository;
+    private MessageStreamRepository streamRepository;
+
     private UserService userService;
     private GroupService groupService;
 
@@ -51,32 +58,29 @@ public class MessageService {
         }
     }
 
-    public MessageDTO toDTO(Message message) {
+    public Mono<MessageDTO> toDTO(Message message) {
         MessageDTO dto = new MessageDTO();
         dto.setId(message.getId());
         dto.setContent(message.getContent());
         dto.setStatus(message.getStatus());
         dto.setTimestamp(message.getTimestamp());
 
-        userService.findById(message.getSenderId())
-                .doOnNext(dto::setSender)
-                .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", message.getReceiverId())))
-                .subscribe();
+        Mono<UserDTO> sender = userService
+                .findById(message.getSenderId())
+                .doOnNext(dto::setSender);
+        Mono<UserDTO> receiver = userService
+                .findById(message.getReceiverId())
+                .doOnNext(dto::setReceiver);
 
-        if (!Objects.isNull(message.getReceiverId())) {
-            userService.findById(message.getReceiverId())
-                    .doOnNext(dto::setReceiver)
-                    .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", message.getReceiverId())))
-                    .subscribe();
-        }
-        if (!Objects.isNull(message.getGroupId())) {
-            groupService.findById(message.getGroupId())
-                    .doOnNext(dto::setGroup)
-                    .doOnError(e -> Mono.error(new EntityNotFoundException("Group", message.getSenderId())))
-                    .subscribe();
-        }
+        Mono<GroupDTO> group = Mono.empty();
+        if (!Objects.isNull(message.getGroupId()))
+            groupService
+                    .findById(message.getGroupId())
+                    .doOnNext(dto::setGroup);
 
-        return dto;
+        return Flux
+                .concat(sender, receiver, group)
+                .then(Mono.just(dto));
     }
 
     public Mono<Long> create(MessageRequest request) {
@@ -98,35 +102,39 @@ public class MessageService {
 
     public Mono<MessageDTO> findById(Long id) {
         return repository.findById(id)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findAll() {
-        return repository.findAll().map(this::toDTO);
+        return repository.findAll().flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByContent(String content) {
         return repository.findMessagesByContentContaining(content)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesBetweenTimestamps(Long start, Long end) {
         return repository.findMessagesByTimestampIsBetween(start, end)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesBySender(Long senderId) {
         return repository.findMessagesBySenderId(senderId)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByReceiver(Long receiverId) {
         return repository.findMessagesByReceiverId(receiverId)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> findMessagesByGroupId(Long groupId) {
         return repository.findMessagesByGroupId(groupId)
-                .map(this::toDTO);
+                .flatMap(this::toDTO);
+    }
+
+    public Flux<MessageDTO> getMessageStream() {
+        return streamRepository.getMessageStream().flatMap(this::toDTO);
     }
 }

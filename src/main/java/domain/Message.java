@@ -1,5 +1,6 @@
 package domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import enums.MessageStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,11 +23,14 @@ public class Message extends BaseEntity {
     private Long timestamp;
 
     @Column("SENDER_ID")
+    @JsonProperty("sender_id")
     private Long senderId;
 
     @Column("RECEIVER_ID")
+    @JsonProperty("receiver_id")
     private Long receiverId;
 
     @Column("GROUP_ID")
+    @JsonProperty("group_id")
     private Long groupId;
 }

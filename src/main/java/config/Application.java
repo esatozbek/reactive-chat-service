@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 
 @SpringBootApplication
-@ComponentScan({"service", "controller","repository"})
+@ComponentScan({"service", "controller","repository","config"})
 @EnableR2dbcRepositories({"repository"})
 @EntityScan({"domain"})
 @Log

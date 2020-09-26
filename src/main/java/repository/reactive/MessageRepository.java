@@ -1,4 +1,4 @@
-package repository;
+package repository.reactive;
 
 import domain.Message;
 import org.springframework.data.r2dbc.repository.Query;

@@ -10,9 +10,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import repository.GroupRepository;
-import repository.UserGroupRepository;
-import repository.UserRepository;
+import repository.reactive.GroupRepository;
+import repository.reactive.UserGroupRepository;
+import repository.reactive.UserRepository;
+import repository.stream.GroupStreamRepository;
 
 @Service
 @AllArgsConstructor
@@ -20,6 +21,7 @@ public class GroupService {
     private GroupRepository repository;
     private UserGroupRepository userGroupRepository;
     private UserRepository userRepository;
+    private GroupStreamRepository streamRepository;
 
     public Mono<Long> create(GroupDTO dto) {
         return repository.save(new Group(dto)).map(BaseEntity::getId);
@@ -65,5 +67,9 @@ public class GroupService {
         UserGroup userGroup = new UserGroup(userId, groupId);
 
         return userGroupRepository.save(userGroup);
+    }
+
+    public Flux<GroupDTO> getGroupStream() {
+        return streamRepository.getGroupStream().map(Group::toDTO);
     }
 }

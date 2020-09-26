@@ -1,4 +1,4 @@
-package repository;
+package repository.reactive;
 
 import domain.User;
 import org.springframework.data.r2dbc.repository.Query;
@@ -16,6 +16,6 @@ public interface UserRepository extends ReactiveCrudRepository<User, Long> {
     @Query("select * from users where username like :username")
     Flux<User> findByUsernameContaining(@Param("username") String username);
 
-    @Query("LISTEN users")
+    @Query("LISTEN some_channel;")
     Flux<User> listenUsers();
 }

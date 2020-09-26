@@ -6,20 +6,26 @@ import domain.UserContact;
 import dto.UserDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import repository.UserContactRepository;
-import repository.UserRepository;
+import repository.reactive.UserContactRepository;
+import repository.reactive.UserRepository;
+import repository.stream.UserStreamRepository;
 
 import java.util.Objects;
 
 @Service
-@AllArgsConstructor
 public class UserService {
     private UserRepository repository;
     private UserContactRepository userContactRepository;
+    private UserStreamRepository streamRepository;
+
+    public UserService(UserRepository repository, UserContactRepository userContactRepository, UserStreamRepository userStreamRepository) {
+        this.repository = repository;
+        this.userContactRepository = userContactRepository;
+        this.streamRepository = userStreamRepository;
+    }
 
     public Mono<Long> createUser(UserDTO userDTO) {
         return repository.save(new User(userDTO)).map(BaseEntity::getId);
@@ -68,5 +74,9 @@ public class UserService {
                 .findContactsFromUser(userId)
                 .flatMap(userContact -> repository.findById(userContact.getContactId()))
                 .map(User::toDTO);
+    }
+
+    public Flux<UserDTO> getUserStream() {
+        return streamRepository.getUserStream().map(User::toDTO);
     }
 }

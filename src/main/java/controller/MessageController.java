@@ -2,6 +2,7 @@ package controller;
 
 import dto.MessageDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -66,5 +67,10 @@ public class MessageController {
     @GetMapping("/start/{start}/end/{end}")
     public Flux<MessageDTO> getMessagesByTimestamps(@PathVariable Long start, @PathVariable Long end) {
         return messageService.findMessagesBetweenTimestamps(start, end);
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<MessageDTO> getMessageStream() {
+        return messageService.getMessageStream();
     }
 }

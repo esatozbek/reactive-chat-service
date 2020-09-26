@@ -3,6 +3,7 @@ package controller;
 import dto.GroupDTO;
 import dto.UserDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -59,5 +60,10 @@ public class GroupController {
         return groupService
                 .addUserGroup(request.getUserId(), request.getGroupId())
                 .map(item -> new BaseResponse());
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<GroupDTO> groupDTOStream() {
+        return groupService.getGroupStream();
     }
 }

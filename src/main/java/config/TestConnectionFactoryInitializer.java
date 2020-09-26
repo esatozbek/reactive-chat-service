@@ -1,8 +1,8 @@
 package config;
 
 import io.r2dbc.spi.ConnectionFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -12,6 +12,7 @@ import org.springframework.data.r2dbc.connectionfactory.init.ConnectionFactoryIn
 import org.springframework.data.r2dbc.connectionfactory.init.ResourceDatabasePopulator;
 
 @Configuration
+@Slf4j
 public class TestConnectionFactoryInitializer {
 
     @Autowired
@@ -24,6 +25,8 @@ public class TestConnectionFactoryInitializer {
             initializer.setConnectionFactory(connectionFactory);
             CompositeDatabasePopulator populator = new CompositeDatabasePopulator();
             populator.addPopulators(new ResourceDatabasePopulator(new ClassPathResource("schema.sql")));
+            log.warn("Executing schema.sql file!");
+
             initializer.setDatabasePopulator(populator);
             return initializer;
         }

@@ -1,19 +1,17 @@
 package controller;
 
+import domain.User;
 import dto.UserDTO;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import request.AddContactRequest;
 import response.BaseResponse;
 import response.IdResponse;
-import response.ParametricResponse;
 import service.UserService;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 @AllArgsConstructor
@@ -21,9 +19,6 @@ import java.util.Objects;
 @RequestMapping("/user")
 public class UserController {
     private UserService userService;
-
-    @Autowired
-    private ApplicationContext context;
 
     @GetMapping("/{id}")
     public Mono<UserDTO> getUser(@PathVariable Long id) {
@@ -70,5 +65,10 @@ public class UserController {
     @GetMapping("/contact/{userId}")
     public Flux<UserDTO> getContactsFromUserId(@PathVariable("userId") Long userId) {
         return userService.getContactsFromUser(userId);
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<UserDTO> listenUsers() {
+        return userService.getUserStream();
     }
 }
