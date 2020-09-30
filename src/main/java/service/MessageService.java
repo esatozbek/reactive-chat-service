@@ -68,7 +68,10 @@ public class MessageService {
         Mono<UserDTO> sender = userService
                 .findById(message.getSenderId())
                 .doOnNext(dto::setSender);
-        Mono<UserDTO> receiver = userService
+
+        Mono<UserDTO> receiver = Mono.empty();
+        if (!Objects.isNull(message.getReceiverId()))
+            receiver = userService
                 .findById(message.getReceiverId())
                 .doOnNext(dto::setReceiver);
 

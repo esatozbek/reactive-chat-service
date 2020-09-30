@@ -32,9 +32,6 @@ public class UserService {
     }
 
     public Mono<UserDTO> findById(Long id) {
-        if (Objects.isNull(id)) {
-            throw new InvalidParameterException("user id");
-        }
         return repository.findById(id)
                 .map(User::toDTO)
                 .onErrorMap(e -> new EntityNotFoundException("User", id));

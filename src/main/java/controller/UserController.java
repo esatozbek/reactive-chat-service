@@ -62,8 +62,8 @@ public class UserController {
                 .map(item -> new BaseResponse());
     }
 
-    @GetMapping("/contact/{userId}")
-    public Flux<UserDTO> getContactsFromUserId(@PathVariable("userId") Long userId) {
+    @GetMapping("/contacts")
+    public Flux<UserDTO> getContactsFromUserId(@RequestHeader("x-user-id") Long userId) {
         return userService.getContactsFromUser(userId);
     }
 
