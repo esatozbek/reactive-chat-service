@@ -11,7 +11,7 @@ import lombok.Setter;
 public class MessageRequest {
     private Long id;
     private String content;
-    private MessageStatus status;
+    private MessageStatus status = MessageStatus.SENT;
     private Long timestamp;
     private Long senderId;
     private Long receiverId;

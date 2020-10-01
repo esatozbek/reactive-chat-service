@@ -67,6 +67,11 @@ public class UserController {
         return userService.getContactsFromUser(userId);
     }
 
+    @GetMapping("/chats")
+    public Flux<UserDTO> getRecentChatUsers(@RequestHeader("x-user-id") Long userId) {
+        return userService.getRecentChatUsers(userId);
+    }
+
     @GetMapping(value = "/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
     public Flux<UserDTO> listenUsers() {
         return userService.getUserStream();

@@ -23,4 +23,7 @@ public interface MessageRepository extends ReactiveCrudRepository<Message, Long>
 
     @Query("select * from message  where group_id = :groupId")
     Flux<Message> findMessagesByGroupId(@Param("groupId") Long groupId);
+
+    @Query("select * from message  where receiver_id = :userId or sender_id = :userId")
+    Flux<Message> findMessagesByReceiverIdOrSenderId(@Param("userId") Long userId);
 }

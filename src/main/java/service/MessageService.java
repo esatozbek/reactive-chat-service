@@ -28,7 +28,7 @@ public class MessageService {
     private UserService userService;
     private GroupService groupService;
 
-    public void updateMessage(Message message, MessageRequest request) {
+    public Mono<Message> updateMessage(Message message, MessageRequest request) {
         if (!Objects.isNull(request.getReceiverId()) && !Objects.isNull(request.getGroupId()))
             throw new InvalidParameterException("Receiver user and group can not be present at the same time.");
         else if (Objects.isNull(request.getReceiverId()) && Objects.isNull(request.getGroupId()))
@@ -38,24 +38,25 @@ public class MessageService {
         message.setStatus(request.getStatus());
         message.setTimestamp(request.getTimestamp());
 
-        userService.findById(request.getSenderId())
+        Mono<UserDTO> senderMono = userService.findById(request.getSenderId())
                 .doOnNext(user -> message.setSenderId(user.getId()))
-                .doOnError(e -> Mono.error(new EntityNotFoundException("Sender user", request.getSenderId())))
-                .subscribe();
+                .doOnError(e -> Mono.error(new EntityNotFoundException("Sender user", request.getSenderId())));
+        Mono<UserDTO> receiverMono = Mono.empty();
+        Mono<GroupDTO> groupMono = Mono.empty();
 
         if (!Objects.isNull(request.getReceiverId())) {
-            userService.findById(request.getReceiverId())
+            receiverMono = userService.findById(request.getReceiverId())
                     .doOnNext(user -> message.setReceiverId(user.getId()))
-                    .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", request.getSenderId())))
-                    .subscribe();
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Receiver user", request.getSenderId())));
         }
 
         if (!Objects.isNull(request.getGroupId())) {
-            groupService.findById(request.getGroupId())
+            groupMono = groupService.findById(request.getGroupId())
                     .doOnNext(group -> message.setGroupId(group.getId()))
-                    .doOnError(e -> Mono.error(new EntityNotFoundException("Group", request.getSenderId())))
-                    .subscribe();
+                    .doOnError(e -> Mono.error(new EntityNotFoundException("Group", request.getSenderId())));
         }
+
+        return Flux.concat(senderMono, receiverMono, groupMono).then(Mono.just(message));
     }
 
     public Mono<MessageDTO> toDTO(Message message) {
@@ -72,8 +73,8 @@ public class MessageService {
         Mono<UserDTO> receiver = Mono.empty();
         if (!Objects.isNull(message.getReceiverId()))
             receiver = userService
-                .findById(message.getReceiverId())
-                .doOnNext(dto::setReceiver);
+                    .findById(message.getReceiverId())
+                    .doOnNext(dto::setReceiver);
 
         Mono<GroupDTO> group = Mono.empty();
         if (!Objects.isNull(message.getGroupId()))
@@ -88,9 +89,9 @@ public class MessageService {
 
     public Mono<Long> create(MessageRequest request) {
         Message newMessage = new Message();
-        updateMessage(newMessage, request);
-
-        return repository.save(newMessage).map(message -> message.getId());
+        return updateMessage(newMessage, request)
+                .flatMap(message -> repository.save(message))
+                .map(BaseEntity::getId);
     }
 
     public Mono<Long> update(Long id, MessageRequest request) {
@@ -135,6 +136,10 @@ public class MessageService {
     public Flux<MessageDTO> findMessagesByGroupId(Long groupId) {
         return repository.findMessagesByGroupId(groupId)
                 .flatMap(this::toDTO);
+    }
+
+    public Flux<MessageDTO> findMessagesBySenderOrReceiver(Long userId) {
+        return repository.findMessagesByReceiverIdOrSenderId(userId).flatMap(this::toDTO);
     }
 
     public Flux<MessageDTO> getMessageStream() {

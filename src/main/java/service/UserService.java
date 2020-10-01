@@ -1,14 +1,17 @@
 package service;
 
 import domain.BaseEntity;
+import domain.Message;
 import domain.User;
 import domain.UserContact;
+import dto.MessageDTO;
 import dto.UserDTO;
 import exception.EntityNotFoundException;
 import exception.InvalidParameterException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import repository.reactive.MessageRepository;
 import repository.reactive.UserContactRepository;
 import repository.reactive.UserRepository;
 import repository.stream.UserStreamRepository;
@@ -20,11 +23,13 @@ public class UserService {
     private UserRepository repository;
     private UserContactRepository userContactRepository;
     private UserStreamRepository streamRepository;
+    private MessageRepository messageRepository;
 
-    public UserService(UserRepository repository, UserContactRepository userContactRepository, UserStreamRepository userStreamRepository) {
+    public UserService(UserRepository repository, UserContactRepository userContactRepository, UserStreamRepository userStreamRepository, MessageRepository messageRepository) {
         this.repository = repository;
         this.userContactRepository = userContactRepository;
         this.streamRepository = userStreamRepository;
+        this.messageRepository = messageRepository;
     }
 
     public Mono<Long> createUser(UserDTO userDTO) {
@@ -75,5 +80,14 @@ public class UserService {
 
     public Flux<UserDTO> getUserStream() {
         return streamRepository.getUserStream().map(User::toDTO);
+    }
+
+    public Flux<UserDTO> getRecentChatUsers(Long userId) {
+        Flux<Message> myMessages = messageRepository.findMessagesByReceiverIdOrSenderId(userId);
+
+        return myMessages
+                .map(message -> message.getSenderId().equals(userId) ? message.getReceiverId() : message.getSenderId())
+                .distinct()
+                .flatMap(this::findById);
     }
 }
