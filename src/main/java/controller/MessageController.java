@@ -21,9 +21,14 @@ public class MessageController {
         return messageService.findById(id);
     }
 
-    @GetMapping()
+    @GetMapping("/all")
     public Flux<MessageDTO> getAllMessages() {
         return messageService.findAll();
+    }
+
+    @GetMapping()
+    public Flux<MessageDTO> getMessagesByUserId(@RequestHeader("x-user-id") Long userId) {
+        return messageService.findMessagesBySenderOrReceiver(userId);
     }
 
     @PutMapping("/{id}")
@@ -70,7 +75,9 @@ public class MessageController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
-    public Flux<MessageDTO> getMessageStream() {
-        return messageService.getMessageStream();
+    public Flux<MessageDTO> getMessageStream(@RequestHeader("x-user-id") Long userId) {
+        return messageService
+                .getMessageStream()
+                .filter(message -> message.getReceiver().getId().equals(userId));
     }
 }
