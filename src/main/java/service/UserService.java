@@ -4,10 +4,8 @@ import domain.BaseEntity;
 import domain.Message;
 import domain.User;
 import domain.UserContact;
-import dto.MessageDTO;
 import dto.UserDTO;
 import exception.EntityNotFoundException;
-import exception.InvalidParameterException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -15,8 +13,6 @@ import repository.reactive.MessageRepository;
 import repository.reactive.UserContactRepository;
 import repository.reactive.UserRepository;
 import repository.stream.UserStreamRepository;
-
-import java.util.Objects;
 
 @Service
 public class UserService {
@@ -80,6 +76,13 @@ public class UserService {
 
     public Flux<UserDTO> getUserStream() {
         return streamRepository.getUserStream().map(User::toDTO);
+    }
+
+    public Flux<UserDTO> getContactsStream(Long userId) {
+        return streamRepository
+                .getContactStream()
+                .filter(item -> item.getUserId().equals(userId))
+                .flatMap(item -> findById(item.getContactId()));
     }
 
     public Flux<UserDTO> getRecentChatUsers(Long userId) {

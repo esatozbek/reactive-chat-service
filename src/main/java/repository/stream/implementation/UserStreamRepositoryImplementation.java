@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import config.DatabaseConfig;
 import constant.StreamRepositoryConstant;
 import domain.User;
+import domain.UserContact;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -33,6 +34,28 @@ public class UserStreamRepositoryImplementation extends StreamRepository impleme
                         String user = jsonNode.get("record").toString();
 
                         return mapper.readValue(user, User.class);
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+
+                    return null;
+                });
+    }
+
+    @Override
+    public Flux<UserContact> getContactStream() {
+        ObjectMapper mapper = new ObjectMapper();
+        return getConnection()
+                .getNotifications()
+                .map(notification -> {
+                    String result = notification.getParameter();
+                    try {
+                        assert result != null;
+                        JsonNode jsonNode = mapper.readTree(result);
+                        String operation = jsonNode.get("operation").asText();
+                        String userContact = jsonNode.get("record").toString();
+
+                        return mapper.readValue(userContact, UserContact.class);
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
                     }

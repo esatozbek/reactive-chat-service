@@ -76,4 +76,9 @@ public class UserController {
     public Flux<UserDTO> listenUsers() {
         return userService.getUserStream();
     }
+
+    @GetMapping(value = "/contact/stream", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<UserDTO> listenContacts(@RequestHeader("x-user-id") Long userId) {
+        return userService.getContactsStream(userId);
+    }
 }
