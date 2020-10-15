@@ -1,5 +1,6 @@
 package dto;
 
+import enums.UserStatusEnum;
 import lombok.*;
 
 @Getter
@@ -10,4 +11,5 @@ import lombok.*;
 public class UserDTO implements BaseDTO {
     private Long id;
     private String username;
+    private UserStatusEnum status;
 }

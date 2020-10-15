@@ -9,12 +9,14 @@ import reactor.core.publisher.Mono;
 import request.MessageRequest;
 import response.IdResponse;
 import service.MessageService;
+import service.UserService;
 
 @AllArgsConstructor
 @RestController
 @RequestMapping("/message")
 public class MessageController {
     private MessageService messageService;
+    private UserService userService;
 
     @GetMapping("/{id}")
     public Mono<MessageDTO> getMessage(@PathVariable Long id) {

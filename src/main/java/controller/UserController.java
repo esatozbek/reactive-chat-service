@@ -3,11 +3,13 @@ package controller;
 import domain.User;
 import dto.UserDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import request.AddContactRequest;
+import request.LoginRequest;
 import response.BaseResponse;
 import response.IdResponse;
 import service.UserService;
@@ -23,6 +25,16 @@ public class UserController {
     @GetMapping("/{id}")
     public Mono<UserDTO> getUser(@PathVariable Long id) {
         return userService.findById(id);
+    }
+
+    @RequestMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
+    public Mono<UserDTO> login(@RequestBody LoginRequest loginRequest) {
+        return userService.login(loginRequest.getUsername());
+    }
+
+    @PostMapping("/logout")
+    public Mono<BaseResponse> logout(@RequestHeader("x-user-id") Long id) {
+        return userService.logout(id).map(item -> new BaseResponse());
     }
 
     @GetMapping("/username/{username}")

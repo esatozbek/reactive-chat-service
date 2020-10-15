@@ -5,7 +5,9 @@ import domain.Message;
 import domain.User;
 import domain.UserContact;
 import dto.UserDTO;
+import enums.UserStatusEnum;
 import exception.EntityNotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -15,18 +17,12 @@ import repository.reactive.UserRepository;
 import repository.stream.UserStreamRepository;
 
 @Service
+@AllArgsConstructor
 public class UserService {
     private UserRepository repository;
     private UserContactRepository userContactRepository;
     private UserStreamRepository streamRepository;
     private MessageRepository messageRepository;
-
-    public UserService(UserRepository repository, UserContactRepository userContactRepository, UserStreamRepository userStreamRepository, MessageRepository messageRepository) {
-        this.repository = repository;
-        this.userContactRepository = userContactRepository;
-        this.streamRepository = userStreamRepository;
-        this.messageRepository = messageRepository;
-    }
 
     public Mono<Long> createUser(UserDTO userDTO) {
         return repository.save(new User(userDTO)).map(BaseEntity::getId);
@@ -48,6 +44,22 @@ public class UserService {
         return repository.deleteById(id);
     }
 
+    public Mono<UserDTO> login(String username) {
+        return repository
+                .findByUsername(username)
+                .flatMap(user -> {
+                    user.setStatus(UserStatusEnum.ONLINE);
+                    return repository.save(user);
+                }).map(User::toDTO);
+    }
+
+    public Mono<UserDTO> logout(Long id) {
+        return repository.findById(id).flatMap(user -> {
+            user.setStatus(UserStatusEnum.OFFLINE);
+            return repository.save(user);
+        }).map(User::toDTO);
+    }
+
     public Flux<UserDTO> findAll() {
         return repository.findAll().map(item -> item.toDTO());
     }
@@ -58,8 +70,8 @@ public class UserService {
     }
 
     public Flux<UserDTO> findUserByUsernameContaining(String username) {
-        String percentageConcated = "%" + username + "%";
-        return repository.findByUsernameContaining(percentageConcated).map(User::toDTO);
+        String percentageConcatenated = "%" + username + "%";
+        return repository.findByUsernameContaining(percentageConcatenated).map(User::toDTO);
     }
 
     public Mono<UserContact> addContact(Long userId, Long contactId) {

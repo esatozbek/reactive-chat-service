@@ -1,7 +1,6 @@
 package enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
