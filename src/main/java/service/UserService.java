@@ -9,6 +9,7 @@ import enums.UserStatusEnum;
 import exception.EntityNotFoundException;
 import exception.LoginException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,11 +18,11 @@ import repository.reactive.UserContactRepository;
 import repository.reactive.UserRepository;
 import repository.stream.UserStreamRepository;
 
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class UserService {
     private UserRepository repository;
     private UserContactRepository userContactRepository;
@@ -111,9 +112,17 @@ public class UserService {
         Flux<Message> myMessages = messageRepository.findMessagesByReceiverIdOrSenderId(userId);
 
         return myMessages
-                .sort(Comparator.comparing(Message::getTimestamp))
-                .map(message -> message.getSenderId().equals(userId) ? message.getReceiverId() : message.getSenderId())
-                .distinct()
+                // .sort((m1, m2) -> m2.getTimestamp().compareTo(m1.getTimestamp()))
+                .map(message -> {
+                    log.info(new Date(message.getTimestamp()).toString());
+                    return message.getSenderId().equals(userId) ? message.getReceiverId() : message.getSenderId();
+                })
+                .reduce(new LinkedHashSet<Long>(), (set, oppositeUserId) -> {
+                    log.info(String.valueOf(oppositeUserId));
+                    set.add(oppositeUserId);
+                    return set;
+                })
+                .flatMapMany(set -> Flux.fromStream(set.stream()))
                 .flatMap(this::findById);
     }
 }
