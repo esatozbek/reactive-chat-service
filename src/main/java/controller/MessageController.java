@@ -16,7 +16,6 @@ import service.UserService;
 @RequestMapping("/message")
 public class MessageController {
     private MessageService messageService;
-    private UserService userService;
 
     @GetMapping("/{id}")
     public Mono<MessageDTO> getMessage(@PathVariable Long id) {

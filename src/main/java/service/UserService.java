@@ -7,6 +7,7 @@ import domain.UserContact;
 import dto.UserDTO;
 import enums.UserStatusEnum;
 import exception.EntityNotFoundException;
+import exception.LoginException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -15,6 +16,9 @@ import repository.reactive.MessageRepository;
 import repository.reactive.UserContactRepository;
 import repository.reactive.UserRepository;
 import repository.stream.UserStreamRepository;
+
+import java.util.Comparator;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -47,10 +51,16 @@ public class UserService {
     public Mono<UserDTO> login(String username) {
         return repository
                 .findByUsername(username)
+                .defaultIfEmpty(new User())
                 .flatMap(user -> {
+                    if (Objects.isNull((user.getId()))) {
+                        return Mono.error(new LoginException());
+                    }
                     user.setStatus(UserStatusEnum.ONLINE);
                     return repository.save(user);
-                }).map(User::toDTO);
+                })
+                .map(User::toDTO)
+                .log();
     }
 
     public Mono<UserDTO> logout(Long id) {
@@ -101,6 +111,7 @@ public class UserService {
         Flux<Message> myMessages = messageRepository.findMessagesByReceiverIdOrSenderId(userId);
 
         return myMessages
+                .sort(Comparator.comparing(Message::getTimestamp))
                 .map(message -> message.getSenderId().equals(userId) ? message.getReceiverId() : message.getSenderId())
                 .distinct()
                 .flatMap(this::findById);

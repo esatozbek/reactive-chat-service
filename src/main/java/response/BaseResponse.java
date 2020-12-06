@@ -8,8 +8,10 @@ import lombok.Setter;
 public class BaseResponse {
     private Boolean status;
     private String message;
+    private Long timestamp;
 
     public BaseResponse() {
+        timestamp = System.currentTimeMillis();
         this.status = true;
         this.message = "";
     }
